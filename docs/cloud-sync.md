@@ -72,4 +72,7 @@ Install the root dependencies with `bun install --frozen-lockfile` and server de
 Use Node 22.13 or later. Run `npm test --prefix server` for server integration checks.
 Run `npx vitest run src/services/account/__tests__/sync.test.ts` for two-device HTTP/SQLite checks.
 The user explicitly waived shared quality gates for this feature; functional and permission checks remain required.
-Native release, DNS/Tunnel routing, and actual ChatGPT account connection need live verification.
+The Windows executable and NSIS installer build locally. Tauri CLI is pinned to 2.10.1;
+the older 2.9.6 bundler failed to add bundle-type metadata for the current Rust runtime.
+The local installer is unsigned and does not include signed updater artifacts.
+Installed-device sync, DNS/Tunnel routing, and the actual ChatGPT account connection still need live verification.
