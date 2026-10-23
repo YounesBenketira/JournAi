@@ -1,0 +1,6 @@
+tunnel: REPLACE_WITH_JOURNAI_TUNNEL_UUID
+credentials-file: /run/credentials/cloudflared-journai.service/tunnel.json
+ingress:
+  - hostname: journai.younesbenketira.com
+    service: http://127.0.0.1:4391
+  - service: http_status:404

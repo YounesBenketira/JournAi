@@ -26,6 +26,14 @@ Keep unrelated routes intact. Use managed DNS/Tunnel credentials; do not expose 
 Verify `/health` locally and over public HTTPS, and verify unauthenticated `/mcp` returns 401 with discovery metadata.
 Rollback by restoring the previous release symlink and restarting only `journai.service`.
 
+For a dedicated tunnel, authenticate `cloudflared tunnel login`, create a tunnel named `journai`,
+and route the public hostname with `cloudflared tunnel route dns journai <hostname>`.
+Place that tunnel's credential JSON at `/etc/journai/tunnel.json` with mode 0600.
+Fill in `deployment/tunnel.yml.example` and save it as `/etc/journai/tunnel.yml`.
+Install `deployment/cloudflared-journai.service`; systemd supplies the files through its credential directory.
+Only enable this unit after the tunnel UUID, DNS route, and credential file have been verified.
+This does not require changes to existing application tunnels. See [Cloudflare's tunnel guide](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/create-local-tunnel/).
+
 Daily backups use SQLite's backup API and verify integrity. Backups contain private account data and must remain protected.
 Copy backups to a separate secured host for disaster recovery. No automatic pruning is configured.
 Restore with the service stopped, preserving a copy of the current database and its WAL before replacement.

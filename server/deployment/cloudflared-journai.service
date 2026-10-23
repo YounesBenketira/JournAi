@@ -1,0 +1,21 @@
+[Unit]
+Description=JournAi private origin tunnel
+After=network-online.target journai.service
+Wants=network-online.target journai.service
+
+[Service]
+Type=simple
+DynamicUser=yes
+LoadCredential=tunnel.json:/etc/journai/tunnel.json
+LoadCredential=tunnel.yml:/etc/journai/tunnel.yml
+ExecStart=/usr/local/bin/cloudflared --no-autoupdate tunnel --config %d/tunnel.yml run
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
