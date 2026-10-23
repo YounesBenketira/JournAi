@@ -14,8 +14,8 @@ if ! sudo test -d "$release"; then
   sudo mkdir "$release"
   sudo cp -a "$staging/." "$release/"
   sudo chown -R root:root "$release"
-  sudo chmod -R go-w "$release"
 fi
+sudo chmod -R a+rX,go-w "$release"
 sudo install -d -m 700 /etc/journai
 if ! sudo test -f /etc/journai/server.env; then
   sudo install -m 600 deployment/server.env.example /etc/journai/server.env
