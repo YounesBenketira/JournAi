@@ -1,9 +1,18 @@
 # 📓 JournAi
 
-A private, AI-powered journaling app built with Tauri v2, React 19, and Rust. All your data stays on your device — encrypted at rest with military-grade cryptography.
+A private journaling app built with Tauri v2, React 19, and Rust. Work offline, or sign in to sync through your JournAi server. Journal entries are encrypted on the client before sync; todos and sticky notes support account sharing and ChatGPT access.
 
 ![Platform](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20iOS%20%7C%20Android-blue)
 ![Built With](https://img.shields.io/badge/built%20with-Tauri%20v2%20%2B%20React%2019%20%2B%20Rust-orange)
+
+### Account sync, sharing, and ChatGPT
+
+- Sign in on each device to sync through one self-hosted server.
+- Invite a partner to view only todos created after the connection begins.
+- Use ChatGPT to read and write your own todos and sticky notes through authenticated MCP tools.
+- Keep journal entries encrypted separately from shared todos.
+
+See [account sync](docs/cloud-sync.md) and [server deployment](server/README.md).
 
 ### Download
 
@@ -95,7 +104,7 @@ Linux note: use the AppImage if you want in-app updates. Deb installs are update
 
 ## 🔒 Security
 
-JournAi is built with a **local-first, zero-trust architecture**. Your journal never leaves your device unless you explicitly export it.
+JournAi stores data locally in an encrypted database. Account sync sends encrypted journal payloads and readable todos and sticky notes to your authenticated JournAi server. Shared accounts can view only eligible future todos. ChatGPT tools cannot access journal entries.
 
 ### 🗄️ Encrypted Database
 

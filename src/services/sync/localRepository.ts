@@ -1,4 +1,4 @@
-import { execute, select, executeBatch, type DbStatement } from '../../lib/db';
+import { execute, select, executeBatch, executeBatchIfUnchanged, type DbStatement } from '../../lib/db';
 import { getTimestamp } from '../../utils/date';
 import { generateId } from '../../utils/generators';
 import type { SyncCollection } from '../../types/sync';
@@ -265,8 +265,9 @@ export async function applyRemoteRecord(
   payloadHash: string,
   deleted: boolean,
   payload: Record<string, unknown> | null,
-  syncedAt: string = getTimestamp()
-): Promise<void> {
+  syncedAt: string = getTimestamp(),
+  expected?: { localVersion: number | null; payload: Record<string, unknown> | null }
+): Promise<boolean> {
   const statements: DbStatement[] = [];
 
   if (deleted) {
@@ -290,8 +291,18 @@ export async function applyRemoteRecord(
     values: [collection, recordId, deleted ? 1 : 0, version, updatedAt, payloadHash, syncedAt],
   });
 
-  await executeBatch(statements);
+  if (expected) {
+    const applied = await executeBatchIfUnchanged(statements, [
+      { query: 'SELECT local_version, dirty FROM sync_state WHERE collection=$1 AND record_id=$2', values: [collection, recordId],
+        rows: expected.localVersion === null ? [] : [{ local_version: expected.localVersion, dirty: 0 }] },
+      { query: getSelectRecordQuery(collection), values: [recordId], rows: expected.payload ? [expected.payload] : [] },
+    ]);
+    if (!applied) return false;
+  } else {
+    await executeBatch(statements);
+  }
   await clearSyncConflictsForRecord(collection, recordId);
+  return true;
 }
 
 export async function updateSyncedAt(
@@ -334,6 +345,7 @@ export async function saveSyncConflict(
     [collection, recordId]
   );
   if (existing.length > 0) {
+    await execute('UPDATE sync_conflicts SET remote_payload=$1 WHERE id=$2', [remotePayload ? JSON.stringify(remotePayload) : null, existing[0].id]);
     return;
   }
 

@@ -218,6 +218,35 @@ export async function executeBatch(statements: DbStatement[]): Promise<void> {
     });
 }
 
+function stableRows(value: unknown): string {
+    return JSON.stringify(value, (_key, item) => {
+        if (!item || typeof item !== 'object') return item;
+        if (Array.isArray(item)) return item;
+        return Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b)));
+    });
+}
+
+export async function executeBatchIfUnchanged(
+    statements: DbStatement[], guards: { query: string; values: unknown[]; rows: unknown[] }[]
+): Promise<boolean> {
+    return runSerialized(async () => {
+        await withDatabaseLockRetry(() => invokeExecute('BEGIN IMMEDIATE', []));
+        let committed = false;
+        try {
+            for (const guard of guards) {
+                const current = await invokeSelect(guard.query, guard.values);
+                if (stableRows(current) !== stableRows(guard.rows)) return false;
+            }
+            for (const statement of statements) await invokeExecute(statement.query, statement.values ?? []);
+            await invokeExecute('COMMIT', []);
+            committed = true;
+            return true;
+        } finally {
+            if (!committed) await invokeExecute('ROLLBACK', []);
+        }
+    });
+}
+
 export function parseCursor(cursor: string, config: CursorConfig): string[] {
     const sep = config.separator ?? '|';
     return cursor.split(sep);

@@ -1,0 +1,3 @@
+server/deployment/*.sh text eol=lf
+server/deployment/*.service text eol=lf
+server/deployment/*.timer text eol=lf

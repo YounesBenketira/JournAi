@@ -1,0 +1,29 @@
+[Unit]
+Description=JournAi account sync and ChatGPT tools
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+WorkingDirectory=/opt/journai/current
+ExecStart=/usr/bin/node src/index.js
+EnvironmentFile=/etc/journai/server.env
+StateDirectory=journai
+StateDirectoryMode=0700
+UMask=0077
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+ReadWritePaths=/var/lib/journai
+
+[Install]
+WantedBy=multi-user.target

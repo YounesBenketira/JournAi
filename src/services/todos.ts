@@ -1,7 +1,8 @@
 import type { Todo, TodoRow } from '../types/todo';
 import { getTimestamp } from '../utils/date';
 import { generateId } from '../utils/generators';
-import { select, execute } from '../lib/db';
+import { select, execute, executeBatch } from '../lib/db';
+import { initializeAccountStorage } from './account/storage';
 import { markRecordDeleted, markRecordDirty } from './sync/localRepository';
 
 function rowToTodo(row: TodoRow): Todo {
@@ -40,10 +41,13 @@ export async function createTodo(date: string, content: string): Promise<Todo> {
   );
   const position = (maxPositionRows[0]?.max_pos ?? -1) + 1;
 
-  await execute(
-    'INSERT INTO todos (id, date, content, completed, position, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-    [id, date, content, 0, position, timestamp, timestamp]
-  );
+  await initializeAccountStorage();
+  await executeBatch([
+    { query: 'INSERT INTO todos (id, date, content, completed, position, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      values: [id, date, content, 0, position, timestamp, timestamp] },
+    { query: "INSERT INTO todo_sharing_origin(record_id, epoch) VALUES($1, COALESCE((SELECT CAST(value AS INTEGER) FROM account_sync_meta WHERE key='sharingEpoch'), 0))",
+      values: [id] },
+  ]);
   await markRecordDirty('todos', id, timestamp);
 
   return { id, date, content, completed: false, position };

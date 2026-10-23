@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useSync } from './useSync';
 import type { DayData, StickyNote } from '../types/todo';
 import type { MonthIndicators } from '../services/calendar';
 import { getDayData, getIndicatorsByDateRange, getMonthIndicatorsRange } from '../services/calendar';
@@ -8,6 +9,7 @@ import * as stickyNotesService from '../services/stickyNotes';
 import { useCalendarContext } from '../contexts/CalendarContext';
 
 export function useCalendar() {
+  const { sharedTodos } = useSync();
   const {
     currentMonth,
     currentYear,
@@ -146,6 +148,16 @@ export function useCalendar() {
       setIsLoadingDayData(false);
     }
   }, [setDayDataWithStickyNote]);
+
+  useEffect(() => {
+    const refresh = () => {
+      dayDataCacheRef.current.clear();
+      void loadIndicators();
+      if (selectedDate) void loadDayData(selectedDate);
+    };
+    window.addEventListener('account:synced', refresh);
+    return () => window.removeEventListener('account:synced', refresh);
+  }, [selectedDate, loadDayData, loadIndicators]);
 
   const prefetchDayData = useCallback(async (date: string) => {
     if (dayDataCacheRef.current.has(date)) {
@@ -354,11 +366,24 @@ export function useCalendar() {
     return () => window.removeEventListener('import-complete', handler);
   }, [refreshData]);
 
+  const visibleIndicators = useMemo(() => {
+    if (!indicators) return null;
+    const todosCounts = new Map(indicators.todosCounts);
+    const range = indicatorsRangeRef.current;
+    for (const todo of sharedTodos) {
+      const date = todo.payload.date;
+      if (range && (date < range.startDate || date > range.endDate)) continue;
+      const count = todosCounts.get(date) ?? { total: 0, completed: 0 };
+      todosCounts.set(date, { total: count.total + 1, completed: count.completed + Number(Boolean(todo.payload.completed)) });
+    }
+    return { ...indicators, todosCounts };
+  }, [indicators, sharedTodos]);
+
   return {
     currentMonth,
     currentYear,
     selectedDate,
-    indicators,
+    indicators: visibleIndicators,
     dayData,
     stickyNote,
     isLoadingIndicators,

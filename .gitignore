@@ -33,6 +33,10 @@ Thumbs.db
 
 # Database
 *.db
+*.db-wal
+*.db-shm
+server/data/
+artifacts/
 
 # IDE
 .idea

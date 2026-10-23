@@ -12,6 +12,38 @@ describe('Database Lock Retry', () => {
     vi.resetModules();
   });
 
+  it('rolls back a download if its local row changed before the transaction', async () => {
+    mockInvoke.mockImplementation((command: string) => {
+      if (command === 'plugin:sql|load') return Promise.resolve('sqlite:journai.db');
+      if (command === 'plugin:sql|select') return Promise.resolve([{ content: 'New local edit' }]);
+      return Promise.resolve({ rowsAffected: 1 });
+    });
+    const { executeBatchIfUnchanged } = await import('../db');
+    const applied = await executeBatchIfUnchanged(
+      [{ query: 'UPDATE todos SET content=$1 WHERE id=$2', values: ['Cloud edit', 'todo-1'] }],
+      [{ query: 'SELECT content FROM todos WHERE id=$1', values: ['todo-1'], rows: [{ content: 'Original content' }] }]
+    );
+    expect(applied).toBe(false);
+    const executed = mockInvoke.mock.calls.filter(call => call[0] === 'plugin:sql|execute').map(call => call[1].query);
+    expect(executed).toEqual(['BEGIN IMMEDIATE', 'ROLLBACK']);
+  });
+
+  it('applies a download and commits when its local row has not changed', async () => {
+    mockInvoke.mockImplementation((command: string) => {
+      if (command === 'plugin:sql|load') return Promise.resolve('sqlite:journai.db');
+      if (command === 'plugin:sql|select') return Promise.resolve([{ content: 'Original content', id: 'todo-1' }]);
+      return Promise.resolve({ rowsAffected: 1 });
+    });
+    const { executeBatchIfUnchanged } = await import('../db');
+    const applied = await executeBatchIfUnchanged(
+      [{ query: 'UPDATE todos SET content=$1 WHERE id=$2', values: ['Cloud edit', 'todo-1'] }],
+      [{ query: 'SELECT content, id FROM todos WHERE id=$1', values: ['todo-1'], rows: [{ id: 'todo-1', content: 'Original content' }] }]
+    );
+    expect(applied).toBe(true);
+    const executed = mockInvoke.mock.calls.filter(call => call[0] === 'plugin:sql|execute').map(call => call[1].query);
+    expect(executed).toEqual(['BEGIN IMMEDIATE', 'UPDATE todos SET content=$1 WHERE id=$2', 'COMMIT']);
+  });
+
   it('retries execute when sqlite reports a lock', async () => {
     let executeAttempts = 0;
     mockInvoke.mockImplementation((command: string) => {

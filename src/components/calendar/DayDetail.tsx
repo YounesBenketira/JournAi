@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Text, Card, Spinner } from '../themed';
 import TodoList from './TodoList';
+import SharedTodos from './SharedTodos';
 import StickyNote from './StickyNote';
 import SectionHeader from './SectionHeader';
 import AddItemButton from './AddItemButton';
@@ -88,6 +89,7 @@ export default function DayDetail({
         onReorderTodos={onReorderTodos}
       />
 
+      <SharedTodos date={dayData.date} />
       <div className="day-detail-section">
         <SectionHeader title="Sticky Note" indicatorType="sticky-note" />
         {stickyNote && (

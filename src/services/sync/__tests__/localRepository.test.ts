@@ -159,6 +159,9 @@ describe('sync local repository integrity', () => {
       expect.stringContaining('FROM sync_conflicts'),
       ['entries', 'entry-1']
     );
-    expect(mockExecute).not.toHaveBeenCalled();
+    expect(mockExecute).toHaveBeenCalledWith(
+      'UPDATE sync_conflicts SET remote_payload=$1 WHERE id=$2',
+      [JSON.stringify({ id: 'entry-1', content: 'Remote' }), 'conflict-1']
+    );
   });
 });

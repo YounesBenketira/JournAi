@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up JournAi data
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/journai/current/deployment/backup.py
+UMask=0077
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/journai

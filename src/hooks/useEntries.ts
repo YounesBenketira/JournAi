@@ -235,6 +235,12 @@ export function useEntries(): UseEntriesReturn {
         return page.entries;
     }, [setEntries, setTotalCount, setHasMore, setCursor]);
 
+    useEffect(() => {
+        const refresh = () => { void refreshEntries().catch(error => console.error('Could not refresh synced entries:', error)); };
+        window.addEventListener('account:entries-changed', refresh);
+        return () => window.removeEventListener('account:entries-changed', refresh);
+    }, [refreshEntries]);
+
     return {
         entries: state.entries,
         totalCount: state.totalCount,
