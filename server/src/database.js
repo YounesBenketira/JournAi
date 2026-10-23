@@ -39,6 +39,10 @@ export function openDatabase(path) {
     CREATE TABLE IF NOT EXISTS oauth_requests (
       id TEXT PRIMARY KEY, params TEXT NOT NULL, csrf_hash TEXT NOT NULL, expires_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS oauth_device_requests (
+      code_hash TEXT PRIMARY KEY, request_id TEXT UNIQUE NOT NULL,
+      account_id TEXT REFERENCES accounts(id), expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS oauth_codes (
       code_hash TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts(id),
       client_id TEXT NOT NULL, redirect_uri TEXT NOT NULL, challenge TEXT NOT NULL,

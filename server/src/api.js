@@ -89,6 +89,7 @@ export function apiRouter(db) {
   });
   api.get('/shared-todos', (req, res) => res.json({ records: sharedTodos(db, req.session.account_id) }));
   api.post('/connections/revoke', (req, res) => {
+    db.prepare('DELETE FROM oauth_device_requests WHERE account_id=?').run(req.session.account_id);
     db.prepare("DELETE FROM sessions WHERE account_id=? AND kind IN ('mcp','refresh')").run(req.session.account_id);
     res.sendStatus(204);
   });

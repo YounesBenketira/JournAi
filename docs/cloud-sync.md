@@ -57,6 +57,12 @@ CSRF-protected consent, one-use codes, audience-bound tokens, scoped tools and r
 Tools list/create/update the signed-in user's todos and sticky notes and list view-only shared todos.
 There are no journal or sharing-administration tools. Settings can revoke ChatGPT access.
 
+Version 0.1.8 adds approval from a signed-in app when browser password login is unavailable.
+On the browser consent page, choose app approval and copy the one-time connection code.
+In JournAi Settings under ChatGPT, paste it, review permissions, and select Allow access.
+The original browser tab completes OAuth automatically. Codes expire with the ten-minute browser request;
+approval preserves its client, redirect, PKCE challenge and scopes. Passwords and journal keys are unchanged.
+
 ## Migration from Google Drive
 
 The account settings replace provider selection. Existing local data is uploaded on first sign-in.

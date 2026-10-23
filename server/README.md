@@ -62,6 +62,11 @@ In ChatGPT Plugins, add a custom MCP server using `https://<hostname>/mcp` and O
 Dynamic client registration permits only the documented ChatGPT callback paths on `chatgpt.com`.
 Sign in and approve access in the browser. Authorization requires S256 PKCE, bound redirect URI,
 resource audience, state forwarding, an expiring CSRF-protected consent request and a one-use code.
+Alternatively, choose approval from a signed-in JournAi 0.1.8+ app. Paste the browser's one-time
+connection code into Settings, review permissions and allow access. Only the original browser can
+finish the request; the app's existing authenticated session supplies the account identity.
+The `oauth_device_requests` table stores hashed connection codes and expires with the browser request.
+Revoking ChatGPT access also clears pending approvals from that account.
 Tools list and create/update own todos and sticky notes and list shared todos. Journal entries are never tools.
 Creation tools take a UUID request ID so retries do not duplicate a task. Updates require a fresh revision.
 

@@ -31,8 +31,8 @@ export function createApp(db, { origin, allowedOrigins = [], trustProxy = false 
   app.get('/health', (_req, res) => { db.prepare('SELECT 1').get(); res.json({ status: 'ok' }); });
   app.get('/credential.js', (_req, res) => res.sendFile(fileURLToPath(new URL('./credential.js', import.meta.url))));
   app.use(express.static(fileURLToPath(new URL('../public', import.meta.url))));
-  app.use('/api', apiRouter(db));
   app.use(oauthRouter(db, origin));
+  app.use('/api', apiRouter(db));
   mountMcp(app, db, origin);
   app.use((error, _req, res, _next) => {
     const status = error instanceof ZodError ? 400 : error.status ?? 500;

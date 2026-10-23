@@ -13,7 +13,7 @@ const app = createApp(db, { origin, trustProxy: process.env.JOURNAI_TRUST_PROXY 
   allowedOrigins: (process.env.JOURNAI_ALLOWED_ORIGINS ?? '').split(',').filter(Boolean) });
 const listener = app.listen(Number(process.env.PORT ?? 4391), '127.0.0.1', () => console.log('JournAi server ready.'));
 const cleanup = setInterval(() => {
-  for (const table of ['sessions', 'invitations', 'oauth_codes', 'oauth_requests']) db.prepare(`DELETE FROM ${table} WHERE expires_at < ?`).run(Date.now());
+  for (const table of ['sessions', 'invitations', 'oauth_codes', 'oauth_requests', 'oauth_device_requests']) db.prepare(`DELETE FROM ${table} WHERE expires_at < ?`).run(Date.now());
 }, 3600000).unref();
 for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => {
   clearInterval(cleanup);

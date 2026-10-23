@@ -5,6 +5,7 @@ import StatusMessage from './StatusMessage';
 import { useSync } from '../../hooks/useSync';
 import { SERVER_URL, apiRequest } from '../../services/account/client';
 import SharingSettings from './SharingSettings';
+import ChatGptApproval from './ChatGptApproval';
 import ConflictResolutionModal from './ConflictResolutionModal';
 import '../../styles/settings.css';
 
@@ -62,6 +63,7 @@ export default function SyncCard() {
         <Text variant="secondary">Add a custom MCP server in ChatGPT Plugins, then sign in to JournAi. ChatGPT can read and write your todos and sticky notes. Journal entries are excluded.</Text>
         <label className="settings-label" htmlFor="account-mcp-url">Server URL</label>
         <input id="account-mcp-url" className="settings-input" value={`${SERVER_URL}/mcp`} readOnly onFocus={e => e.target.select()} />
+        <ChatGptApproval />
         <Button variant="secondary" size="sm" disabled={busy} onClick={() => void act(async () => {
           await apiRequest('/connections/revoke', { method: 'POST' }); setNotice('ChatGPT access revoked. Reconnect to allow access again.');
         })}>Revoke ChatGPT access</Button>

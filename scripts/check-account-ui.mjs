@@ -23,13 +23,16 @@ try {
     }, { signedIn });
     await page.route('**/src/hooks/useSync.ts*', route => route.fulfill({ contentType: 'application/javascript', body: 'export function useSync() { return window.__accountFixture; }' }));
     await page.route('**/src/lib/store.ts*', route => route.fulfill({ contentType: 'application/javascript', body: 'export const appStore = { get: async () => null, set: async () => {} };' }));
-    await page.route('**/src/services/account/client.ts*', route => route.fulfill({ contentType: 'application/javascript', body: `export const SERVER_URL='https://journai.example.com'; export async function apiRequest() { return {shares:[], invitations:[]}; }` }));
+    await page.route('**/src/services/account/client.ts*', route => route.fulfill({ contentType: 'application/javascript', body: `export const SERVER_URL='https://journai.example.com'; export async function apiRequest(path) { if(path==='/connections/preview') return {clientName:'ChatGPT',scopes:['todos:read','todos:write','notes:read','notes:write'],expiresAt:Date.now()+60000}; return {shares:[], invitations:[]}; }` }));
     await page.goto('http://127.0.0.1:1420/scripts/account-preview.html');
     await page.getByText('JournAi Account', { exact: true }).waitFor();
     if (signedIn) {
       await page.getByText('Plan dinner together', { exact: false }).waitFor();
       assert.equal(await page.getByRole('checkbox').count(), 0);
       await page.getByLabel('Their JournAi account email').fill('partner@example.com');
+      await page.getByLabel('Connection code', { exact: true }).fill('local-preview-code');
+      await page.getByRole('button', { name: 'Review connection', exact: true }).click();
+      await page.getByRole('button', { name: 'Allow access', exact: true }).waitFor();
     } else {
       await page.getByLabel('Email', { exact: true }).fill('owner@example.com');
       await page.getByRole('button', { name: 'Create an account', exact: true }).click();

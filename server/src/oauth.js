@@ -4,6 +4,7 @@ import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import { authenticate, digest, fail, issueSession, token } from './security.js';
 import { transaction } from './database.js';
+import { browserRequest, finishConsent, mountDeviceConsent } from './device-consent.js';
 
 const scopes = ['todos:read', 'todos:write', 'notes:read', 'notes:write'];
 const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -26,6 +27,10 @@ function consentPage(name, requestId, csrf) {
     <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
     <p id="error" role="alert"></p><button type="submit">Sign in and allow access</button>
     <p>Close this page to cancel. You can revoke access in JournAi settings.</p></form>
+    <hr><button type="button" id="use-app">Approve from my signed-in JournAi app</button>
+    <section id="device-consent" hidden><p>In JournAi 0.1.8 or later, open Settings, find ChatGPT, and paste this connection code. Review the request and select Allow access. Only approve a connection you started yourself.</p>
+    <label for="device-code">Connection code</label><input id="device-code" readonly>
+    <p id="device-status" role="status">Waiting for approval in JournAi...</p></section>
     </main><script type="module" src="/consent.js"></script></body></html>`;
 }
 
@@ -33,6 +38,7 @@ export function oauthRouter(db, origin) {
   const router = Router();
   const resource = `${origin}/mcp`;
   const limit = rateLimit({ windowMs: 900000, limit: 40, standardHeaders: 'draft-8', legacyHeaders: false });
+  mountDeviceConsent(router, db, origin, limit);
   const metadata = { resource, authorization_servers: [origin], scopes_supported: scopes, bearer_methods_supported: ['header'] };
   router.get(['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp'], (_req, res) => res.json(metadata));
   router.get('/.well-known/oauth-authorization-server', (_req, res) => res.json({
@@ -65,21 +71,9 @@ export function oauthRouter(db, origin) {
   });
   router.post('/oauth/authorize', limit, async (req, res) => {
     const input = z.object({ requestId: z.string().max(100), csrf: z.string().max(100), email: z.string(), credential: z.string() }).parse(req.body);
-    const request = db.prepare('SELECT * FROM oauth_requests WHERE id=? AND expires_at>?').get(input.requestId, Date.now());
-    const cookie = req.headers.cookie?.split(';').map(v => v.trim()).find(v => v.startsWith('journai_oauth='))?.slice(14);
-    if (req.headers.origin !== origin || !request || cookie !== input.csrf || digest(input.csrf) !== request.csrf_hash) fail(403, 'Authorization expired. Start the connection again.');
+    const request = browserRequest(db, req, origin);
     const account = await authenticate(db, input);
-    const params = JSON.parse(request.params);
-    const code = token();
-    transaction(db, () => {
-      if (!db.prepare('DELETE FROM oauth_requests WHERE id=?').run(input.requestId).changes) fail(400, 'Authorization already used.');
-      db.prepare('INSERT INTO oauth_codes VALUES(?,?,?,?,?,?,?,?)').run(digest(code), account.id, params.client_id, params.redirect_uri, params.code_challenge, resource, params.scope, Date.now() + 120000);
-    });
-    const redirect = new URL(params.redirect_uri);
-    redirect.searchParams.set('code', code);
-    redirect.searchParams.set('iss', origin);
-    if (params.state) redirect.searchParams.set('state', params.state);
-    res.json({ redirect: redirect.toString() });
+    res.json(finishConsent(db, request, account.id, origin));
   });
   router.post('/oauth/token', limit, (req, res) => {
     const input = z.object({ grant_type: z.enum(['authorization_code', 'refresh_token']), client_id: z.string(), resource: z.literal(resource),
