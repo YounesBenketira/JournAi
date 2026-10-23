@@ -75,4 +75,8 @@ The user explicitly waived shared quality gates for this feature; functional and
 The Windows executable and NSIS installer build locally. Tauri CLI is pinned to 2.10.1;
 the older 2.9.6 bundler failed to add bundle-type metadata for the current Rust runtime.
 The local installer is unsigned and does not include signed updater artifacts.
-Installed-device sync, DNS/Tunnel routing, and the actual ChatGPT account connection still need live verification.
+Public HTTPS routing through the dedicated JournAi Cloudflare tunnel was verified on 2026-10-23.
+The three server integration scenarios also passed against the public deployment using disposable accounts:
+account isolation and future-only sharing, revision-based sync, and OAuth/MCP writes and revocation.
+Those accounts and their data were removed after verification. Discovery and native-app CORS checks passed.
+Installed-device sync and the actual ChatGPT account connection still need live verification.
