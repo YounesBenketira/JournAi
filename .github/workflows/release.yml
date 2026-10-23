@@ -37,7 +37,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      - run: bun install
+      - run: bun install --frozen-lockfile
 
       - name: Import Apple certificate
         if: matrix.platform == 'macos-latest'
@@ -68,7 +68,7 @@ jobs:
           tagName: v__VERSION__
           releaseName: v__VERSION__
           releaseBody: 'See assets below for downloads.'
-          releaseDraft: false
+          releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
 
